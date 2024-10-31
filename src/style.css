@@ -1,12 +1,10 @@
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Gothic A1', serif; /* More gothic font */
   line-height: 1.5;
   font-weight: 400;
-
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
+  color: rgba(255, 255, 255, 0.87); /* Light text for dark background */
+  background-color: #2c1320; /* Dark maroon-purple background */
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -15,11 +13,12 @@
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: #b39ddb; /* Soft purple for links */
   text-decoration: inherit;
 }
+
 a:hover {
-  color: #535bf2;
+  color: #7c4dff; /* Deeper purple on hover */
 }
 
 body {
@@ -28,11 +27,13 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  flex-direction: column;
 }
 
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
+  color: #d1c4e9; /* Lighter purple for headings */
 }
 
 #app {
@@ -47,49 +48,61 @@ h1 {
   padding: 1.5em;
   will-change: filter;
 }
+
 .logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+  filter: drop-shadow(0 0 2em #7c4dffaa); /* Purple shadow on hover */
 }
+
 .logo.vanilla:hover {
-  filter: drop-shadow(0 0 2em #3178c6aa);
+  filter: drop-shadow(0 0 2em #9575cd); /* Different purple for vanilla logo */
 }
 
 .card {
   padding: 2em;
+  border: 1px solid #4527a0; /* Purple borders for cards */
+  background-color: #311b92; /* Dark purple background for cards */
 }
 
 .read-the-docs {
-  color: #888;
+  color: #b39ddb; /* Soft purple for additional links or text */
 }
 
 button {
   border-radius: 8px;
-  border: 1px solid transparent;
+  border: 1px solid #b39ddb; /* Soft purple border */
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #4527a0; /* Dark purple background */
   cursor: pointer;
   transition: border-color 0.25s;
 }
+
 button:hover {
-  border-color: #646cff;
+  border-color: #7c4dff; /* Brighter purple on hover */
 }
+
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+canvas {
+  border: 1px solid #b39ddb; /* Soft purple border */
+  border-radius: 8px;
+  box-shadow: 4px 4px 8px rgba(0,0,0,0.5);
+}
+
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    color: #b39ddb; /* Light purple text for light theme */
+    background-color: #f3e5f5; /* Very light purple background */
   }
   a:hover {
-    color: #747bff;
+    color: #7c4dff; /* Deeper purple on hover for light theme */
   }
   button {
-    background-color: #f9f9f9;
+    background-color: #d1c4e9; /* Lighter purple background for buttons in light theme */
   }
 }
