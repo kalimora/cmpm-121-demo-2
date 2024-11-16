@@ -1,114 +1,197 @@
-// Import necessary styles
+// Import CSS for styling
 import "./style.css";
 
-// Setup the canvas and its context
-const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-if (!canvas) {
-    throw new Error('Canvas element not found');
+// Application constants
+const APP_NAME = "Draw Please Queen!";
+const CANVAS_WIDTH = 256; // Width of the drawing canvas
+const CANVAS_HEIGHT = 256; // Height of the drawing canvas
+const EXPORT_WIDTH = 1024; // Width of the canvas when exporting the drawing
+const EXPORT_HEIGHT = 1024; // Height of the canvas when exporting the drawing
+
+// Set the title of the document
+document.title = APP_NAME;
+
+// Drawing modes to distinguish between using a marker or placing a sticker
+enum DRAW_MODES {
+    MARKER,
+    STICKER
 }
-const ctx = canvas.getContext('2d');
+
+// Drawable interface for elements that can be drawn and interacted with on the canvas
+interface Drawable {
+    draw(ctx: CanvasRenderingContext2D): void; // Method to draw the element
+    drag(x: number, y: number): void; // Method to update element position
+}
+
+// Class for drawing lines on the canvas
+class MarkerLine implements Drawable {
+    private points: { x: number, y: number }[] = [];
+
+    constructor(private x: number, private y: number, private color: string, private size: number) {
+        this.points.push({ x, y });
+    }
+
+    draw(ctx: CanvasRenderingContext2D) {
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = this.size;
+        ctx.beginPath();
+        ctx.moveTo(this.points[0].x, this.points[0].y);
+        this.points.forEach(point => ctx.lineTo(point.x, point.y));
+        ctx.stroke();
+    }
+
+    drag(x: number, y: number) {
+        this.points.push({ x, y });
+    }
+}
+
+// Class for placing sticker emojis on the canvas
+class Sticker implements Drawable {
+    constructor(private x: number, private y: number, private emoji: string) {}
+
+    draw(ctx: CanvasRenderingContext2D) {
+        ctx.font = "24px Arial";
+        ctx.fillText(this.emoji, this.x, this.y);
+    }
+
+    drag(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+    }
+}
+
+// Setup canvas element for drawing
+const canvas = document.createElement("canvas");
+document.body.appendChild(canvas);
+canvas.width = CANVAS_WIDTH;
+canvas.height = CANVAS_HEIGHT;
+const ctx = canvas.getContext("2d");
+
 if (!ctx) {
-    throw new Error('Failed to get the canvas context');
+    throw new Error("Failed to get the drawing context"); // Ensure the drawing context is available
 }
 
-// Here, we're using the non-null assertion operator because we know ctx is not null past this point.
-const context = ctx!;
+const assuredCtx: CanvasRenderingContext2D = ctx; // Use the assured context for drawing operations
 
-// Retrieve buttons and assert their existence
-const clearButton = document.getElementById('clearButton') as HTMLButtonElement;
-const undoButton = document.getElementById('undoButton') as HTMLButtonElement;
-const redoButton = document.getElementById('redoButton') as HTMLButtonElement;
-const emojiSelector = document.getElementById('emojiSelector') as HTMLSelectElement;
+const drawing: Drawable[] = [];
+let currentMode: DRAW_MODES = DRAW_MODES.MARKER;
+let currentColor = "black";
+let currentSize = 5;
+let currentEmoji = "😊";
 
-// Define types for points and emojis
-type Point = { x: number, y: number };
-type EmojiPoint = { x: number, y: number, emoji: string };
-type LineItem = Point | EmojiPoint;
+// Predefined list of emojis for stickers
+const emojis = ["😊", "😂", "❤️", "👍", "😒", "😎", "👏", "😢", "🔥", "🌈", "🍕", "🚗", "📅", "🏀", "🎲"];
 
-// Setup state for drawing
-let isDrawing = false;
-let currentLine: LineItem[] = [];
-let lines: LineItem[][] = [];
-let undoStack: LineItem[][] = [];
-let redoStack: LineItem[][] = [];
-
-function startDrawing(event: MouseEvent) {
-    isDrawing = true;
-    currentLine = [];
-    lines.push(currentLine);
-    addPointOrEmoji(event);
-}
-
-function stopDrawing() {
-    isDrawing = false;
-    if (currentLine.length > 0) {
-        undoStack.push([...currentLine]);
-    }
-}
-
-function addPointOrEmoji(event: MouseEvent) {
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    const selectedEmoji = emojiSelector.value;
-
-    if (selectedEmoji && selectedEmoji !== 'None') {
-        currentLine.push({ x, y, emoji: selectedEmoji });
-    } else {
-        currentLine.push({ x, y });
-    }
-    redrawCanvas();
-}
-
-function redrawCanvas() {
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    lines.forEach(line => {
-        context.beginPath();
-        line.forEach((item, index) => {
-            if ('emoji' in item) {
-                context.font = '32px Arial'; // Adjust as needed
-                context.fillText(item.emoji, item.x, item.y);
-            } else {
-                if (index === 0) context.moveTo(item.x, item.y);
-                else context.lineTo(item.x, item.y);
-                context.stroke();
-            }
-        });
-    });
-}
-
-// Event listeners for mouse interactions
-canvas.addEventListener('mousedown', startDrawing);
-canvas.addEventListener('mouseup', stopDrawing);
-canvas.addEventListener('mousemove', (event) => {
-    if (isDrawing) {
-        addPointOrEmoji(event);
+canvas.addEventListener("mousedown", (event) => {
+    const x = event.offsetX;
+    const y = event.offsetY;
+    if (currentMode === DRAW_MODES.MARKER) {
+        const line = new MarkerLine(x, y, currentColor, currentSize);
+        drawing.push(line);
+    } else if (currentMode === DRAW_MODES.STICKER) {
+        const sticker = new Sticker(x, y, currentEmoji);
+        drawing.push(sticker);
     }
 });
 
-// Clear the canvas
+canvas.addEventListener("mousemove", (event) => {
+    if (event.buttons) {
+        const x = event.offsetX;
+        const y = event.offsetY;
+        drawing[drawing.length - 1].drag(x, y);
+        redrawCanvas();
+    }
+});
+
+canvas.addEventListener("mouseup", redrawCanvas);
+
+// Function to clear and redraw the canvas
+function redrawCanvas() {
+    assuredCtx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    drawing.forEach(drawable => drawable.draw(assuredCtx));
+}
+
+// Creating and configuring UI elements below the canvas
+const buttonContainer = document.createElement("div");
+document.body.appendChild(buttonContainer);
+
+// Add a title above the canvas
+const title = document.createElement("h1");
+title.textContent = APP_NAME;
+document.body.insertBefore(title, canvas);
+
+const markerButton = document.createElement("button");
+markerButton.textContent = "Marker";
+markerButton.onclick = () => {
+    currentMode = DRAW_MODES.MARKER;
+};
+buttonContainer.appendChild(markerButton);
+
+const emojiSelector = document.createElement("select");
+emojis.forEach(emoji => {
+    const option = document.createElement("option");
+    option.value = emoji;
+    option.textContent = emoji;
+    emojiSelector.appendChild(option);
+});
+emojiSelector.onchange = () => {
+    currentEmoji = emojiSelector.value;
+    currentMode = DRAW_MODES.STICKER; // Switch to sticker mode when selecting an emoji
+};
+buttonContainer.appendChild(emojiSelector);
+
+const colorPicker = document.createElement("input");
+colorPicker.type = "color";
+colorPicker.value = "#000000";
+colorPicker.oninput = () => {
+    currentColor = colorPicker.value;
+};
+buttonContainer.appendChild(colorPicker);
+
+const sizePicker = document.createElement("input");
+sizePicker.type = "range";
+sizePicker.min = "1";
+sizePicker.max = "10";
+sizePicker.value = "5";
+sizePicker.oninput = () => {
+    currentSize = parseInt(sizePicker.value);
+};
+buttonContainer.appendChild(sizePicker);
+
+const undoButton = document.createElement("button");
+undoButton.textContent = "Undo";
+undoButton.onclick = () => {
+    if (drawing.length > 0) {
+        drawing.pop();
+        redrawCanvas();
+    }
+};
+buttonContainer.appendChild(undoButton);
+
+const clearButton = document.createElement("button");
+clearButton.textContent = "Clear";
 clearButton.onclick = () => {
-    lines = [];
-    undoStack = [];
-    redoStack = [];
+    drawing.length = 0;
     redrawCanvas();
 };
+buttonContainer.appendChild(clearButton);
 
-// Undo the last action
-undoButton.onclick = () => {
-    if (undoStack.length > 0) {
-        redoStack.push(undoStack.pop()!);
-        lines.pop();
-        redrawCanvas();
+const exportButton = document.createElement("button");
+exportButton.textContent = "Export";
+exportButton.onclick = () => {
+    const exportCanvas = document.createElement("canvas");
+    exportCanvas.width = EXPORT_WIDTH;
+    exportCanvas.height = EXPORT_HEIGHT;
+    const exportCtx = exportCanvas.getContext("2d");
+    if (exportCtx) {
+        exportCtx.fillStyle = "white";
+        exportCtx.fillRect(0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
+        exportCtx.drawImage(canvas, 0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
+        const dataURL = exportCanvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.href = dataURL;
+        link.download = "export.png";
+        link.click();
     }
 };
-
-// Redo the last undone action
-redoButton.onclick = () => {
-    if (redoStack.length > 0) {
-        const lastLine = redoStack.pop()!;
-        undoStack.push(lastLine);
-        lines.push(lastLine);
-        redrawCanvas();
-    }
-};
+buttonContainer.appendChild(exportButton);
