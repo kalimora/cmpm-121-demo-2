@@ -78,10 +78,13 @@ if (!ctx) {
 
 const assuredCtx: CanvasRenderingContext2D = ctx; // Use the assured context for drawing operations
 
+const STARTING_BRUSH_COLOR = "black";
+const STARTING_BRUSH_SIZE = 5;
+
 const drawing: Drawable[] = [];
 let currentMode: DRAW_MODES = DRAW_MODES.MARKER;
-let currentColor = "black";
-let currentSize = 5;
+let currentColor = STARTING_BRUSH_COLOR;
+let currentSize = STARTING_BRUSH_SIZE;
 let currentEmoji = "😊";
 
 // Predefined list of emojis for stickers
@@ -162,7 +165,6 @@ emojiSelector.onchange = () => {
   currentEmoji = emojiSelector.value;
   currentMode = DRAW_MODES.STICKER; // Switch to sticker mode when selecting an emoji
 };
-topButtonContainer.appendChild(emojiSelector);
 
 const colorPicker = document.createElement("input");
 colorPicker.type = "color";
@@ -170,7 +172,6 @@ colorPicker.value = "#000000";
 colorPicker.oninput = () => {
   currentColor = colorPicker.value;
 };
-topButtonContainer.appendChild(colorPicker);
 
 const sizePicker = document.createElement("input");
 sizePicker.type = "range";
@@ -180,7 +181,6 @@ sizePicker.value = "5";
 sizePicker.oninput = () => {
   currentSize = parseInt(sizePicker.value);
 };
-topButtonContainer.appendChild(sizePicker);
 
 const undoButton = document.createElement("button");
 undoButton.textContent = "Undo";
@@ -190,7 +190,6 @@ undoButton.onclick = () => {
     redrawCanvas();
   }
 };
-buttonContainer.appendChild(undoButton);
 
 const clearButton = document.createElement("button");
 clearButton.textContent = "Clear";
@@ -198,6 +197,12 @@ clearButton.onclick = () => {
   drawing.length = 0;
   redrawCanvas();
 };
+
+topButtonContainer.appendChild(emojiSelector);
+topButtonContainer.appendChild(colorPicker);
+topButtonContainer.appendChild(sizePicker);
+
+buttonContainer.appendChild(undoButton);
 buttonContainer.appendChild(clearButton);
 
 const exportButton = document.createElement("button");
